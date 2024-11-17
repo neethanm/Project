@@ -6,6 +6,9 @@ import streamlit as st
 from zipfile import ZipFile
 from pyproj import Proj, transform
 import random_forest
+import numpy as np
+import rasterio
+import matplotlib.pyplot as plt
 
 try:
     ee.Authenticate()
@@ -24,6 +27,7 @@ def convert_to_latlon(bounds, input_proj='EPSG:4326', output_proj='EPSG:4326'):
     lon2, lat2 = transform(in_proj, out_proj, bounds[2], bounds[3])  # Top-right corner
     
     return [lon1, lat1, lon2, lat2]
+
 
 # Function to get and filter Landsat images
 def get_landsat_images(shapefile_gdf):
@@ -113,31 +117,73 @@ def export_to_drive(landsat_images, region, output_dir):
 
 # Function to display the Landsat images
 def display_landsat_image(shapefile_gdf):
-    # Get Landsat images based on shapefile region
-    landsat_images = get_landsat_images(shapefile_gdf)
+    # # Get Landsat images based on shapefile region
+    # landsat_images = get_landsat_images(shapefile_gdf)
     
-    if landsat_images:
-        # Export the Landsat images to Google Drive
-        download_links = export_to_drive(landsat_images, shapefile_gdf, "downloads")
+    # if landsat_images:
+    #     # Export the Landsat images to Google Drive
+    #     download_links = export_to_drive(landsat_images, shapefile_gdf, "downloads")
         
-        if download_links:
-            # Provide download links for the exported files
-            for link in download_links:
-                st.write(f"Download from Google Drive: {link}")
-    else:
-        st.write("No Landsat images available for the selected region.")
+    #     if download_links:
+    #         # Provide download links for the exported files
+    #         for link in download_links:
+    #             st.write(f"Download from Google Drive: {link}")
+    # else:
+    #     st.write("No Landsat images available for the selected region.")
+    landsat_2024_path = r"C:\Users\91984\Downloads\LandsatImageExport.tif"
+
+    try:
+        with rasterio.open(landsat_2024_path) as src:
+            st.write("Image Metadata:")
+            st.json(src.meta)
+
+            if src.count < 3:
+                st.error("This file does not have enough bands for RGB visualization.")
+            else:
+                red_band = src.read(4) # red band
+                green_band = src.read(3) # green band
+                blue_band = src.read(2) # blue band
+                st.write("Band Statistics:")
+                st.write(f"Red Band - Min: {red_band.min()}, Max: {red_band.max()}")
+                st.write(f"Green Band - Min: {green_band.min()}, Max: {green_band.max()}")
+                st.write(f"Blue Band - Min: {blue_band.min()}, Max: {blue_band.max()}")
+                # Print a portion of the red band for debugging
+                st.write("Red Band Sample Values:")
+                st.write(red_band[0:5, 0:5])
 
 
-# Streamlit file uploader for shapefile
-shapefile_gdf = st.file_uploader("Upload a Shapefile", type=[".shp", ".zip"])
+                def normalize(band):
+                    band = np.nan_to_num(band, nan=-0)
+                    return (band - np.nanmin(band)) / (np.nanmax(band) - np.nanmin(band) + 1e-6)
+            
+            red_norm = normalize(red_band)
+            green_norm = normalize(green_band)
+            blue_norm = normalize(blue_band)
 
-if shapefile_gdf is not None:
-    # Load shapefile using GeoPandas
-    with ZipFile(shapefile_gdf) as zf:
-        shapefile_gdf = gpd.read_file(zf.open(zf.namelist()[0]))
+            # rgb composite
+            rgb_image = np.dstack((red_norm, green_norm, blue_norm)) 
 
-    # Display the first few rows of the shapefile for confirmation
-    st.write(shapefile_gdf.head())
+            fig, ax = plt.subplots(figsize=(10, 10))
+            ax.imshow(rgb_image)
+            ax.set_title("Landsar Image 2024 (RGB Compsite)")
+            ax.axis("off")
+            st.pyplot(fig)
+    except FileNotFoundError:
+        st.error(f"File not found: {landsat_2024_path}")
+    except Exception as e:
+        st.error(f"An error occured: {e}")
+
+
+# # Streamlit file uploader for shapefile
+# shapefile_gdf = st.file_uploader("Upload a Shapefile", type=[".shp", ".zip"])
+
+# if shapefile_gdf is not None:
+#     # Load shapefile using GeoPandas
+#     with ZipFile(shapefile_gdf) as zf:
+#         shapefile_gdf = gpd.read_file(zf.open(zf.namelist()[0]))
+
+#     # Display the first few rows of the shapefile for confirmation
+#     st.write(shapefile_gdf.head())
     
-    # Display Landsat image based on the uploaded shapefile
-    display_landsat_image(shapefile_gdf)
+#     # Display Landsat image based on the uploaded shapefile
+#     display_landsat_image(shapefile_gdf)
