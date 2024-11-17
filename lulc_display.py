@@ -9,8 +9,8 @@ from matplotlib.colors import ListedColormap
 st.title("Clip Raster (LULC) with Shapefile")
 
 # File paths
-raster_file_path = "temlulc\LULC_2024.tif"  # Replace with your raster file path
-shapefile_path = "temp_shapefile\Manglore.shp"    # Replace with your shapefile path
+raster_file_path = "temlulc\LULC_2024.tif" 
+shapefile_path = "temp_shapefile\Manglore.shp"  
 
 try:
     # Load the raster file

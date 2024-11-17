@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import os
 import tempfile
 import landsat 
-import alternate_landsat
 
 st.title("Shapefile Uploader and Viewer")
 
@@ -33,7 +32,7 @@ if landsat_button:
 
 if st.session_state.page == "landsat":
     if 'shapefile_gdf' in st.session_state:
-        alternate_landsat.display_landsat_image(st.session_state.shapefile_gdf)  # Call the function from landsat.py
+        landsat.display_landsat_image(st.session_state.shapefile_gdf)  # Call the function from landsat.py
     else:
         st.error("Shapefile data is missing. Please upload the shapefile first.")
 else:

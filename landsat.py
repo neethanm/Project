@@ -5,8 +5,8 @@ import os
 import streamlit as st
 from zipfile import ZipFile
 from pyproj import Proj, transform
+import random_forest
 
-# Initialize Earth Engine
 try:
     ee.Authenticate()
     ee.Initialize(project='ee-neethanmallya111')
@@ -14,7 +14,6 @@ try:
 except Exception as e:
     st.write(f"Error initializing Earth Engine: {e}")
 
-# Function to convert projected coordinates to lat/lon (WGS 84)
 def convert_to_latlon(bounds, input_proj='EPSG:4326', output_proj='EPSG:4326'):
     # Using pyproj for coordinate transformation
     in_proj = Proj(init=input_proj)
@@ -45,7 +44,7 @@ def get_landsat_images(shapefile_gdf):
     st.write(f"Region geometry: {region.getInfo()}")
 
     # Define the years for which to collect Landsat images
-    years = [2020, 2014, 2024]
+    years = [2004, 2014, 2024]
     landsat_images = []
 
     for year in years:

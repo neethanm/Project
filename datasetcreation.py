@@ -10,7 +10,6 @@ classes = {
     'Open Land': {'label': 4, 'color': (210, 180, 140)}  # Tan
 }
 
-# Create synthetic band values (simulated ranges for each class)
 data = []
 np.random.seed(42)
 
@@ -32,13 +31,10 @@ for class_name, properties in classes.items():
         swir1 = np.random.randint(*swir1_range)
         data.append([red, green, blue, nir, swir1, label, class_name])
 
-# Convert to DataFrame
 df = pd.DataFrame(data, columns=['Red', 'Green', 'Blue', 'NIR', 'SWIR1', 'Label', 'Class'])
 
-# Save the dataset as CSV
 output_csv = 'lulc_dataset_generated.csv'
 df.to_csv(output_csv, index=False)
 print(f"Generated dataset saved to: {output_csv}")
 
-# Display first few rows
 print(df.head())
