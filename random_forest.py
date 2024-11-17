@@ -8,11 +8,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Step 1: Load the dataset
-df = pd.read_csv('lulc_dataset_updated.csv')
+df = pd.read_csv('lulc_dataset_generated.csv')
 
-# Features (bands) and target (class labels)
+# Assuming numerical class labels in the 'Class' column
 X = df[['Red', 'Green', 'Blue', 'NIR', 'SWIR1']]
-y = df['Class']
+y = df['Label']
 
 # Step 2: Split dataset into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -33,8 +33,8 @@ print(classification_report(y_test, y_pred, target_names=['Urban', 'Vegetation',
 cm = confusion_matrix(y_test, y_pred, labels=[0, 1, 2, 3, 4])
 plt.figure(figsize=(8, 6))
 sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-            xticklabels=['Urban', 'Vegetation', 'Water', 'Agriculture', 'Open Land'],
-            yticklabels=['Urban', 'Vegetation', 'Water', 'Agriculture', 'Open Land'])
+             xticklabels=['Urban', 'Vegetation', 'Water', 'Agriculture', 'Open Land'],
+             yticklabels=['Urban', 'Vegetation', 'Water', 'Agriculture', 'Open Land'])
 plt.title('Confusion Matrix')
 plt.xlabel('Predicted')
 plt.ylabel('Actual')
@@ -72,7 +72,7 @@ def preprocess_landsat_image(landsat_bands):
     return normalized_bands.reshape(-1, normalized_bands.shape[2])
 
 # Step 7: Load and preprocess Landsat image
-tif_file = r"C:\Users\91984\Downloads\map_2021.tif"
+tif_file = r"C:\Users\91984\Downloads\LandsatImageExport.tif"  # Replace with your actual file path
 landsat_bands, transform, crs = load_landsat_bands(tif_file)
 
 print("Shape of Landsat Bands:", landsat_bands.shape)
@@ -85,11 +85,6 @@ print("Shape of Features for Prediction:", X_landsat.shape)
 # Step 8: Predict LULC classes
 y_landsat_pred = clf.predict(X_landsat)
 
-# Debug predicted classes
-unique_classes, counts = np.unique(y_landsat_pred, return_counts=True)
-print(f"Unique predicted classes: {unique_classes}")
-print(f"Counts for each class: {counts}")
-
 # Step 9: Reshape predictions to original image dimensions
 predicted_image = y_landsat_pred.reshape(landsat_bands.shape[0], landsat_bands.shape[1])
 
@@ -97,15 +92,24 @@ predicted_image = y_landsat_pred.reshape(landsat_bands.shape[0], landsat_bands.s
 def save_classified_image(output_file, predicted_image, transform, crs):
     """Saves the classified result as a TIF file."""
     with rasterio.open(output_file, 'w', driver='GTiff', height=predicted_image.shape[0],
-                       width=predicted_image.shape[1], count=1, dtype=predicted_image.dtype,
-                       crs=crs, transform=transform) as dst:
+                        width=predicted_image.shape[1], count=1, dtype=predicted_image.dtype,
+                        crs=crs, transform=transform) as dst:
         dst.write(predicted_image, 1)
 
 output_file = 'classified_lulc.tif'
 save_classified_image(output_file, predicted_image, transform, crs)
 
 # Step 11: Display classified map
-plt.imshow(predicted_image, cmap='viridis')
-plt.colorbar(label='Class Label')
+# Step 11: Display classified map
+classes = ['Urban', 'Vegetation', 'Water', 'Agriculture', 'Open Land']  # Replace with your actual class names
+
+# Display the classified image using 'Spectral' colormap
+plt.imshow(predicted_image, cmap='Spectral')
+
+# Create a colorbar with numeric ticks, corresponding to the class indices
+cbar = plt.colorbar()
+cbar.set_ticks(np.arange(len(classes)))  # Use the number of classes as ticks
+cbar.set_ticklabels(classes)  # Set the tick labels to the class names
+
 plt.title('Classified Land Use Land Cover')
 plt.show()
