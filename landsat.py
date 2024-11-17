@@ -2,10 +2,11 @@ import ee
 import geemap
 import geopandas as gpd
 import os
+import random_forest
 import streamlit as st
 from zipfile import ZipFile
 from pyproj import Proj, transform
-import random_forest
+# import random_forest
 import numpy as np
 import rasterio
 import matplotlib.pyplot as plt
@@ -165,13 +166,20 @@ def display_landsat_image(shapefile_gdf):
 
             fig, ax = plt.subplots(figsize=(10, 10))
             ax.imshow(rgb_image)
-            ax.set_title("Landsar Image 2024 (RGB Compsite)")
+            ax.set_title("Landsat Image 2024 (RGB Composite)")
             ax.axis("off")
             st.pyplot(fig)
+
+            lulc_button = st.button("Generate LULC")
+
+            if lulc_button:
+                random_forest.display_lulc(landsat_2024_path)
+
     except FileNotFoundError:
         st.error(f"File not found: {landsat_2024_path}")
     except Exception as e:
-        st.error(f"An error occured: {e}")
+        st.error(f"An error occurred: {e}")
+
 
 
 # # Streamlit file uploader for shapefile
