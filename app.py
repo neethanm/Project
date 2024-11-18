@@ -3,7 +3,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import os
 import tempfile
-import landsat 
+import landsat
 
 st.title("Shapefile Uploader and Viewer")
 
