@@ -1,7 +1,6 @@
 import rasterio
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import normalize
 import matplotlib.pyplot as plt
 from scipy.ndimage import convolve
 
@@ -29,23 +28,18 @@ def compute_transition_matrix(lulc_map1, lulc_map2):
 
     # Normalize to get probabilities
     transition_prob_matrix = transition_matrix / transition_matrix.sum(axis=1, keepdims=True)
-    
+
     # Convert to DataFrame
     transition_df = pd.DataFrame(
         transition_prob_matrix,
         index=[f"From {cls}" for cls in all_classes],
         columns=[f"To {cls}" for cls in all_classes]
     )
-    
+
     return transition_df, all_classes
 
-lulc_map1 = read_lulc_map(r"random_lulcs_for_testing\LULC_2018.tif")
-lulc_map2 = read_lulc_map(r"random_lulcs_for_testing\LULC_2021.tif")
-transition_df, all_classes = compute_transition_matrix(lulc_map1, lulc_map2)
-
-
-def visualize_lulc_map(lulc_map, all_classes, title="LULC Map"):
-    class_colors = plt.cm.get_cmap('tab20', len(all_classes))
+def visualize_lulc_map(lulc_map, all_classes, title="LULC Map", colormap='Spectral'):
+    class_colors = plt.cm.get_cmap(colormap, len(all_classes))
     class_to_color = {cls: class_colors(i) for i, cls in enumerate(all_classes)}
 
     lulc_colored = np.array([[class_to_color[cls] for cls in row] for row in lulc_map])
@@ -78,31 +72,30 @@ def simulate_lulc(lulc_map, transition_matrix, neighborhood_kernel, n_steps=5):
         # Update the LULC map based on the transition probabilities and neighborhood influence
         # (Here, you can apply a probabilistic model to decide state transitions)
         # This is a simple demonstration of how you can incorporate spatial influence:
-        
+
         new_lulc_map = lulc_map.copy()
-        
+
         for i in range(lulc_map.shape[0]):
             for j in range(lulc_map.shape[1]):
                 current_class = lulc_map[i, j]
                 prob_vector = transition_probs[current_class]
-                
+
                 # Modify the transition probabilities based on the neighborhood map
                 # (e.g., higher probability of change to urban if surrounded by urban)
                 # You can apply a function to scale or modify the probabilities here
-                
+
                 # Example: Pick a new class based on transition probabilities
                 new_class = np.random.choice(all_classes, p=prob_vector)
                 new_lulc_map[i, j] = new_class
-        
+
         # Update the LULC map for the next iteration
         lulc_map = new_lulc_map
-    
+
     return lulc_map
 
 def simulate_ca_markov(lulc_map_paths, neighborhood_kernel, n_steps=5):
-
     lulc_map = read_lulc_map(lulc_map_paths[0])
-    
+
     for t in range(1, len(lulc_map_paths)):
         next_lulc_map = read_lulc_map(lulc_map_paths[t])
 
@@ -112,8 +105,9 @@ def simulate_ca_markov(lulc_map_paths, neighborhood_kernel, n_steps=5):
 
         print(f"Simulated LULC Map at time step {t}:")
         print(lulc_map)
-        visualize_lulc_map(lulc_map, all_classes, title=f"Simulated LULC Map at timr step {t}")
+        visualize_lulc_map(lulc_map, all_classes, title=f"Simulated LULC Map at time step {t}")
 
+# Example usage:
 lulc_map_paths = [r"random_lulcs_for_testing\LULC_2018.tif", r"random_lulcs_for_testing\LULC_2021.tif", r"random_lulcs_for_testing\LULC_2024.tif"]
 neighborhood_kernel = np.ones((3, 3))
 simulate_ca_markov(lulc_map_paths, neighborhood_kernel)
