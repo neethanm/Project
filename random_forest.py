@@ -85,9 +85,37 @@ def train_random_forest(features, target):
     clf.fit(X_train, y_train)
     print("Model training completed.")
     print("Evaluation:")
+    
     y_pred = clf.predict(X_test)
-    print(classification_report(y_test, y_pred))
+
+    # Create a reverse class mapping for labels to class names
+    label_to_class_name = {v: k for k, v in class_mapping.items()}
+    
+    # Create a mapping of class names and numbers for display in the classification report
+    class_names = [label_to_class_name[label] for label in sorted(class_mapping.values())]
+
+    # Generate the classification report
+    report = classification_report(y_test, y_pred, target_names=class_names, output_dict=True)
+    
+    # Convert the classification report dictionary to a pandas DataFrame
+    report_df = pd.DataFrame(report).transpose()
+
+    # Display the classification report as a table under the map
+    st.write("### Classification Report")
+    st.dataframe(report_df.style.format({"precision": "{:.2f}", "recall": "{:.2f}", "f1-score": "{:.2f}"}))
+
+    # Extract accuracy, macro avg, and weighted avg values from the report
+    accuracy = report['accuracy']
+    macro_avg = report['macro avg']
+    weighted_avg = report['weighted avg']
+    
+    # Display accuracy, macro avg, and weighted avg below the table
+    st.write(f"**Accuracy:** {accuracy:.2f}")
+    st.write(f"**Macro Average - Precision:** {macro_avg['precision']:.2f}, Recall: {macro_avg['recall']:.2f}, F1-score: {macro_avg['f1-score']:.2f}")
+    st.write(f"**Weighted Average - Precision:** {weighted_avg['precision']:.2f}, Recall: {weighted_avg['recall']:.2f}, F1-score: {weighted_avg['f1-score']:.2f}")
+    
     return clf
+
 
 def classify_raster(raster, model):
     n_bands, n_rows, n_cols = raster.shape
@@ -164,9 +192,3 @@ def display_lulc(landsat_path):
 
     save_classified_raster(output_path, classified, meta)
     visualize_lulc(classified, inverse_class_mapping)
-
-st.title("Land Use Land Cover (LULC) Classification")
-landsat_file = st.file_uploader("Upload Landsat Image", type=["tif"])
-
-if landsat_file:
-    display_lulc(landsat_file)
